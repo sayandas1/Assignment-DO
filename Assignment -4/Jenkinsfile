@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG = credentials('your-kubeconfig-credentials-id')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Maven Build') {
+            steps {
+                script {
+                    sh 'mvn clean install'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    sh 'docker build -t helloworld-java .'
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                script {
+                    sh 'docker tag helloworld-java your-docker-registry/helloworld-java:latest'
+                    sh 'docker push your-docker-registry/helloworld-java:latest'
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    sh 'kubectl apply -f kubernetes-deployment.yaml'
+                }
+            }
+        }
+    }
+}
